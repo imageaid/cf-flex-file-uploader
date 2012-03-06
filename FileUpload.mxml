@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:FormItem xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			// AS3 Classes for import
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.utils.ObjectUtil;
+			import flash.events.*;
+			import flash.net.FileReference;
+			import flash.net.URLRequest;
+			import flash.net.URLVariables;
+			
+			// establish a FileReference object
+			private var fileRef:FileReference;
+			
+			/*
+			* Our bound public variables
+			* NOTE: Yes, these should probably not be exposed as public vars but I'm 
+			* not always sold on using getters and setters and writing the extra and, I think, 
+			* unnecessary code for encapsulating public properties when using MXML 
+			* I do take a different approach when I write components in AS3 but here, I'm too lazy!
+			*/
+			[Bindable] public var strText:String;
+			[Bindable] public var bolShowTrace:Boolean = false;
+			[Bindable] public var strUploadScript:String;
+			[Bindable] public var strUploadDir:String;
+			
+			/* 
+			* Initializes our component, setting up the FileReference class and its listeners
+			* When each of the events listed below is fired, the corresponding function will be executed
+			*/
+			private function init():void {            
+			    fileRef = new FileReference();
+			    fileRef.addEventListener(Event.CANCEL, cancelEvent);
+			    fileRef.addEventListener(Event.COMPLETE, completeEvent);
+			    fileRef.addEventListener(Event.SELECT, selectEvent);
+			    fileRef.addEventListener(IOErrorEvent.IO_ERROR, traceEvent); 
+			    fileRef.addEventListener(Event.OPEN, traceEvent);
+			    fileRef.addEventListener(ProgressEvent.PROGRESS, progressEvent);
+			    fileRef.addEventListener(SecurityErrorEvent.SECURITY_ERROR, traceEvent);
+			}
+			
+			/*
+			* If the publi property boolShowTraceis true, the TextArea (this.ta) will show some output
+			*/
+			private function traceEvent(event:Event):void {
+				var tmp:String = "================================\n";
+				this.ta.text += tmp + event.type + " event:" + mx.utils.ObjectUtil.toString(event) + "\n" ;
+				this.ta.verticalScrollPosition += 20;
+			}
+			
+			/*
+			* The user has cancelled the request
+			* so, we'll disable the upload and cancel buttons and reset the filename field
+			* and we will show them an alert that they cancelled the upload
+			*/
+			private function cancelEvent(event:Event):void {
+				fileRef.cancel(); // stop the upload process -- or anything else going on with this class
+				Alert.show("Upload Cancelled");
+				this.btn_upload.enabled = false;
+				this.btn_cancel.enabled = false;
+				this.filename.text = "";
+			}
+			
+			/*
+			* If there is an I/O error, we show the details here
+			*/
+			private function ioErrorEvent(event:IOErrorEvent):void{
+				Alert.show("I/O Error:" + event.text);
+				this.ta.text = "";
+				this.ta.text = "I/O Error: " + event.text;
+			}
+			
+			/*
+			* A user has selected a file from their computer
+			* We can now enable the upload and cancel buttons to work
+			* We'll set the text of the TextInput for filename to the name of the file on the server
+			* We also reset the progress bar and its label
+			*/
+			private function selectEvent(event:Event):void{
+				this.btn_upload.enabled = true;
+				this.btn_cancel.enabled = true;
+				this.filename.text = fileRef.name;
+				this.progressBar.setProgress(0, 100);
+				this.progressBar.label = "Loading 0%";			
+			}
+			
+			/*
+			* As Flex receives wind of the progress of uploading the file, we update the progress bar accordingly
+			*/
+			private function progressEvent(event:ProgressEvent):void {
+				this.progressBar.setProgress(event.bytesLoaded, event.bytesTotal);
+			}
+			
+			/*
+			* When we're done, update the progress bar label
+			* We also disable the cancel and upload buttons since the file has been uploaded already
+			* And, if boolShowTrace is true, the user will also see some text that the file is uploaded
+			*/
+			private function completeEvent(event:Event):void {
+				this.progressBar.label = "Complete.";
+				this.btn_upload.enabled = false;
+				this.btn_cancel.enabled = false;
+				this.ta.text = "File uploaded.";
+			}
+			
+			/*
+			* The "meat" of the component. This method fires when a user clicks the upload button
+			* more detailed comments inside the method
+			*/
+			private function uploadFile(endpoint:String):void {
+				// one of the first things I do is to clean up the file type (make sure no empty spaces)
+				var cleanFileType:String = fileRef.type;
+				cleanFileType = cleanFileType.replace(" ","");
+				
+				// now, we need to setup the URL variables. Specifically, we want to set the upload directory and file type (see CFM script) values
+				var _variables:URLVariables = new URLVariables();
+				_variables.uploadDir = this.strUploadDir;
+				_variables.fileType = cleanFileType;
+				
+				// sets a URL request to the passed in parameter for the endpoint (the upload script)
+				var req:URLRequest = new URLRequest(endpoint);
+				// Tell Flex to POST this data (rather than GET)
+				req.method = URLRequestMethod.POST;
+				// And, add the URL variables to the request
+				req.data = _variables;
+				
+				// That's it! Call the upload method of the FileReference class and Flex does the rest!!
+				this.fileRef.upload(req);//param, false 
+				
+				// Of course, let's help the user out and let them know what's up
+				this.progressBar.label = "Uploading...";		
+				// oh, and I set the cancel button to be enabled if they need to stop the process.
+				this.btn_cancel.enabled = true;
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%">
+		<mx:TextInput id="filename" text="{this.strText}" width="70%" enabled="false"/>	
+		<mx:TextInput id="filetype" text="" visible="false" width="10" />
+	</mx:HBox>
+	<mx:HBox width="100%">
+		<mx:Button width="80" label="Browse" click="fileRef.browse()" />
+		<mx:Button width="80" label="Upload" id="btn_upload" enabled="false" click="uploadFile(this.strUploadScript)" />
+		<mx:Button width="80" label="Cancel" id="btn_cancel" enabled="false" click="fileRef.cancel()" />
+		<mx:ProgressBar id="progressBar" mode="manual" width="120"/>
+	</mx:HBox>
+	<mx:HBox visible="{bolShowTrace}" width="100%">
+		<mx:TextArea id="ta" width="100%" height="60" />
+	</mx:HBox>
+</mx:FormItem>

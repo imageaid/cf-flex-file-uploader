@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:fu="path.to.component.*"
+	layout="vertical" creationComplete="init()"
+	width="100%" height="100%" >
+	
+	<!-- NOTE: you will need to update the namespace above (xmlns:fu="") to match the path to the component in your application -->
+	
+	<mx:Script>
+		<![CDATA[			
+			/* 
+			* NOTES --
+			* EXAMPLE OF HOW YOU NEED TO SET PATHS IN FLEX FOR UNIX VERSUS WIN SYSTEMS 
+			* CAREFUL!: Win requires double back slashes when setting a directory/file path
+			* 
+			* Unix
+			* this.strUploadDirectory = "/Applications/JRun4/servers/cfusion/cfusion-ear/cfusion-war/domain_org/public/uploads/";
+			* this.strUploadScript = "/Applications/JRun4/servers/cfusion/cfusion-ear/cfusion-war/domain_org/uploader/fileUpload.cfm/";
+			* 
+			* Win 
+			* this.strUploadDirectory = "D:\\wwwroot\\domain_com\\public\\uploads\\";
+			* this.strUploadScript = "D:\\wwwroot\\domain_com\\uploader\\fileUpload.cfm\\";
+			* 
+			* strText Property
+			* The strText property is used to populate the filename text input in FileUpload.mxml. 
+			* I typically get this from a database (RemoteObject) call and populate it with the name of the file currently in the system (if applicable)
+			* But you can ignore it or do whatever else you want with it
+			*/
+			
+			private function init():void
+			{				
+				// YOU CAN SET THESE TO ANY LOCATION THAT FITS YOUR SERVER -- THIS IS ALL THE FILEUPLOAD.MXML *NEEDS* TO KNOW
+				this.strUploadDirectory = "D:\\wwwroot\\domain_com\\public\\uploads\\";
+				this.strUploadScript = "D:\\wwwroot\\domain_com\\uploader\\fileUpload.cfm\\";
+			}
+		]]>
+	</mx:Script>
+	
+	<!-- Create an MXML form and, where you want, add as many FileUpload components as you like and, yes, I find it funny to use 'fu' as the prefix...I'm so mature :) -->
+	<mx:Form id="myForm" label="My Upload Form" width="100%" height="100%" backgroundColor="#FFFFFF">
+		<mx:FormHeading label="Upload some stuff" width="100%" fontSize="12" />
+		<!-- 
+			## FileUpload extends FormItem
+			## outside the standard FormItem attributes/properties
+			## you can set the various custom public variables/properties here (upload directory, upload script, text for the filename input field )
+			## boolShowTrace, if true, will show a TextArea component that provides text feedback (unlike the visual indicator of the progress bar) to the user
+			## 		about the process (success, failure, why it failed, etc.). The default for this is false (in the FileUpload component)
+		-->
+		<fu:FileUpload 
+			label="Big Image" 
+			id="bigImage"  
+			strUploadDir="{this.strUploadDirectory}" 
+			strUploadScript="{this.strUploadScript}" 
+			strText="Text to show on form (i.e., name of file)" 
+			bolShowTrace="false" 
+			width="400"  
+			height="100"/>
+		<!-- additional implementations of the component -->
+		<fu:FileUpload 
+			label="Other Stuff" 
+			id="mediumImage" 
+			strUploadDir="{this.strUploadDirectory}" 
+			strUploadScript="{this.strUploadScript}" 
+			strText="Text to show on form (i.e., name of file)" 
+			bolShowTrace="false" 
+			width="400"  
+			height="100"/>
+		<fu:FileUpload 
+			label="Still More" 
+			id="littleImage" 
+			strUploadDir="{this.strUploadDirectory}" 
+			strUploadScript="{this.strUploadScript}" 
+			strText="Text to show on form (i.e., name of file)" 
+			bolShowTrace="false" 
+			width="400"  
+			height="100"/>	
+	</mx:Form>
+	
+</mx:Panel>
